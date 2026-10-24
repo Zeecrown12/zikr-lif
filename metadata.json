@@ -1,0 +1,6 @@
+{
+  "name": "ZIKR LIFE",
+  "description": "Remember Allah. Grow Together. Comprehensive Islamic lifestyle app featuring Prayer Times, Holy Quran, Dhikr & Tasbih, Reminders, Daily Habits, Ramadan Companion, and Community.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
