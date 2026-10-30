@@ -186,12 +186,15 @@ fun ArabicTextView(
     text: String,
     fontSize: TextUnit = 24.sp,
     color: Color = EmeraldDark,
+    fontFamily: androidx.compose.ui.text.font.FontFamily? = null,
+    lineHeightMultiplier: Float = 1.8f,
     modifier: Modifier = Modifier
 ) {
     Text(
         text = text,
         fontSize = fontSize,
-        lineHeight = (fontSize.value * 1.6).sp,
+        lineHeight = (fontSize.value * lineHeightMultiplier).sp,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         color = color,
         textAlign = TextAlign.End,
@@ -207,12 +210,16 @@ fun ArabicTextView(
     arabicText: String,
     fontSize: Int = 24,
     textColor: Color = EmeraldDark,
+    fontFamily: androidx.compose.ui.text.font.FontFamily? = null,
+    lineHeightMultiplier: Float = 1.8f,
     modifier: Modifier = Modifier
 ) {
     ArabicTextView(
         text = arabicText,
         fontSize = fontSize.sp,
         color = textColor,
+        fontFamily = fontFamily,
+        lineHeightMultiplier = lineHeightMultiplier,
         modifier = modifier
     )
 }

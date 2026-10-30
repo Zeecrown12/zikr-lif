@@ -44,6 +44,7 @@ import com.example.data.repository.AudioPlayerManager
 import com.example.data.repository.AudioPlayerState
 import com.example.data.repository.ZikrPreferencesRepository
 import com.example.ui.components.ArabicTextView
+import com.example.ui.components.TypographySettingsDialog
 import com.example.ui.components.ZikrTopBar
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
@@ -59,6 +60,10 @@ fun QuranScreen(
     val lastReadSurahNum by repository.lastReadSurah.collectAsState()
     val lastReadAyahNum by repository.lastReadAyah.collectAsState()
     val quranFontSize by repository.quranFontSize.collectAsState()
+    val translationFontSize by repository.translationFontSize.collectAsState()
+    val arabicFont by repository.arabicFont.collectAsState()
+    val englishFont by repository.englishFont.collectAsState()
+    val lineSpacing by repository.lineSpacing.collectAsState()
     val readingMode by repository.quranReadingMode.collectAsState()
     val audioState by audioManager.playerState.collectAsState()
     val currentAudioId by audioManager.currentPlayingId.collectAsState()
@@ -69,6 +74,14 @@ fun QuranScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") } // "All", "Bookmarked", "Meccan", "Medinan"
     var activeSurahNumber by remember { mutableStateOf<Int?>(null) }
+    var showTypographyDialog by remember { mutableStateOf(false) }
+
+    if (showTypographyDialog) {
+        TypographySettingsDialog(
+            repository = repository,
+            onDismiss = { showTypographyDialog = false }
+        )
+    }
 
     // Load full Surah with all verses from local assets when activeSurahNumber changes
     val activeSurah = remember(activeSurahNumber) {
@@ -86,6 +99,10 @@ fun QuranScreen(
         SurahReaderView(
             surah = activeSurah,
             fontSize = quranFontSize,
+            translationFontSize = translationFontSize,
+            arabicFont = arabicFont,
+            englishFont = englishFont,
+            lineSpacing = lineSpacing,
             readingMode = readingMode,
             isBookmarked = bookmarkedSurahs.contains(activeSurah.number),
             bookmarkedVerses = bookmarkedVerses,
@@ -102,6 +119,7 @@ fun QuranScreen(
                 Toast.makeText(context, "Saved reading progress: Surah ${activeSurah.nameEnglish}, Ayah $ayahNum", Toast.LENGTH_SHORT).show()
             },
             onChangeFontSize = { delta -> repository.setQuranFontSize(quranFontSize + delta) },
+            onOpenTypography = { showTypographyDialog = true },
             onSelectReadingMode = { repository.setQuranReadingMode(it) },
             onNavigateSurah = { nextNum ->
                 activeSurahNumber = nextNum.coerceIn(1, 114)
@@ -127,7 +145,8 @@ fun QuranScreen(
         ) {
             ZikrTopBar(
                 title = "The Holy Quran",
-                subtitle = "Complete 114 Surahs • Offline Arabic, Reading Modes & Audio"
+                subtitle = "Complete 114 Surahs • Offline Arabic, Reading Modes & Audio",
+                onSettingsClick = { showTypographyDialog = true }
             )
 
             // Search Bar & Filter Chips
@@ -426,6 +445,10 @@ fun SurahListItem(
 fun SurahReaderView(
     surah: Surah,
     fontSize: Int,
+    translationFontSize: Int,
+    arabicFont: ArabicFontOption,
+    englishFont: EnglishFontOption,
+    lineSpacing: LineSpacingOption,
     readingMode: QuranReadingMode,
     isBookmarked: Boolean,
     bookmarkedVerses: Set<String>,
@@ -439,6 +462,7 @@ fun SurahReaderView(
     onToggleAyahBookmark: (Int) -> Unit,
     onSaveProgress: (Int) -> Unit,
     onChangeFontSize: (Int) -> Unit,
+    onOpenTypography: () -> Unit,
     onSelectReadingMode: (QuranReadingMode) -> Unit,
     onNavigateSurah: (Int) -> Unit,
     onPlaySurah: () -> Unit,
@@ -517,12 +541,24 @@ fun SurahReaderView(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Typography Settings Dialog button
+                        IconButton(
+                            onClick = onOpenTypography,
+                            modifier = Modifier.testTag("reader_typography_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FormatSize,
+                                contentDescription = "Typography Settings",
+                                tint = GoldLight
+                            )
+                        }
+
                         // Font Size controls
                         IconButton(onClick = { onChangeFontSize(-2) }) {
-                            Text("A-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("A-", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                         IconButton(onClick = { onChangeFontSize(2) }) {
-                            Text("A+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("A+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
 
                         // Bookmark Surah
@@ -784,6 +820,10 @@ fun SurahReaderView(
             ContinuousQuranReadingView(
                 surah = surah,
                 fontSize = fontSize,
+                arabicFont = arabicFont,
+                lineSpacing = lineSpacing,
+                englishFont = englishFont,
+                translationFontSize = translationFontSize,
                 currentAudioAyah = currentAudioAyah,
                 onAyahSelected = { ayah -> selectedAyahForDialog = ayah },
                 onPlayAyah = onPlayAyah,
@@ -916,11 +956,13 @@ fun SurahReaderView(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 1. Arabic Text
+                            // 1. Arabic Text with selected font and spacing
                             ArabicTextView(
                                 text = ayah.arabic,
                                 fontSize = fontSize.sp,
-                                color = EmeraldDark
+                                color = EmeraldDark,
+                                fontFamily = arabicFont.fontFamily,
+                                lineHeightMultiplier = lineSpacing.multiplier
                             )
 
                             // 2. Transliteration (Displayed if FULL or ARABIC_TRANSLITERATION)
@@ -929,10 +971,12 @@ fun SurahReaderView(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = ayah.transliteration,
+                                        fontFamily = englishFont.fontFamily,
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             fontStyle = FontStyle.Italic,
                                             color = EmeraldMedium,
-                                            lineHeight = 22.sp
+                                            fontSize = (translationFontSize - 1).sp,
+                                            lineHeight = (translationFontSize * 1.5).sp
                                         )
                                     )
                                 }
@@ -944,9 +988,11 @@ fun SurahReaderView(
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = ayah.translation,
+                                        fontFamily = englishFont.fontFamily,
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = TextDark,
-                                            lineHeight = 22.sp
+                                            fontSize = translationFontSize.sp,
+                                            lineHeight = (translationFontSize * 1.6).sp
                                         )
                                     )
                                 }
@@ -988,23 +1034,31 @@ fun SurahReaderView(
                     ArabicTextView(
                         text = ayah.arabic,
                         fontSize = (fontSize - 2).sp,
-                        color = EmeraldDark
+                        color = EmeraldDark,
+                        fontFamily = arabicFont.fontFamily,
+                        lineHeightMultiplier = lineSpacing.multiplier
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     if (ayah.transliteration.isNotBlank()) {
                         Text(
                             text = ayah.transliteration,
+                            fontFamily = englishFont.fontFamily,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontStyle = FontStyle.Italic,
-                                color = EmeraldMedium
+                                color = EmeraldMedium,
+                                fontSize = (translationFontSize - 1).sp,
+                                lineHeight = (translationFontSize * 1.5).sp
                             )
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                     }
                     Text(
                         text = ayah.translation,
+                        fontFamily = englishFont.fontFamily,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = TextDark
+                            color = TextDark,
+                            fontSize = translationFontSize.sp,
+                            lineHeight = (translationFontSize * 1.6).sp
                         )
                     )
                 }
@@ -1041,6 +1095,10 @@ fun SurahReaderView(
 fun ContinuousQuranReadingView(
     surah: Surah,
     fontSize: Int,
+    arabicFont: ArabicFontOption,
+    lineSpacing: LineSpacingOption,
+    englishFont: EnglishFontOption,
+    translationFontSize: Int,
     currentAudioAyah: Int?,
     onAyahSelected: (Ayah) -> Unit,
     onPlayAyah: (Ayah) -> Unit,
@@ -1140,8 +1198,9 @@ fun ContinuousQuranReadingView(
 
                     Text(
                         text = continuousAnnotatedText,
+                        fontFamily = arabicFont.fontFamily,
                         fontSize = fontSize.sp,
-                        lineHeight = (fontSize * 1.85).sp,
+                        lineHeight = (fontSize * lineSpacing.multiplier).sp,
                         fontWeight = FontWeight.Normal,
                         color = EmeraldDark,
                         textAlign = TextAlign.Justify,

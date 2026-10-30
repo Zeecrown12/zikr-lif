@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -18,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -31,6 +33,7 @@ import com.example.data.prayer.JuristicMethod
 import com.example.data.prayer.PrayerCalculator
 import com.example.data.repository.ZikrPreferencesRepository
 import com.example.ui.components.SectionHeader
+import com.example.ui.components.TypographySettingsDialog
 import com.example.ui.components.ZikrTopBar
 import com.example.ui.theme.*
 import com.google.android.gms.location.LocationServices
@@ -39,6 +42,7 @@ import com.google.android.gms.location.LocationServices
 @Composable
 fun SettingsScreen(
     repository: ZikrPreferencesRepository,
+    onNavigateToUpdate: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -47,9 +51,20 @@ fun SettingsScreen(
     val juristicMethod by repository.juristicMethod.collectAsState()
     val isHapticEnabled by repository.hapticEnabled.collectAsState()
     val quranFontSize by repository.quranFontSize.collectAsState()
+    val translationFontSize by repository.translationFontSize.collectAsState()
+    val arabicFont by repository.arabicFont.collectAsState()
+    val englishFont by repository.englishFont.collectAsState()
 
     var showCityDialog by remember { mutableStateOf(false) }
+    var showTypographyDialog by remember { mutableStateOf(false) }
     var locationStatusMessage by remember { mutableStateOf<String?>(null) }
+
+    if (showTypographyDialog) {
+        TypographySettingsDialog(
+            repository = repository,
+            onDismiss = { showTypographyDialog = false }
+        )
+    }
 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
@@ -315,6 +330,49 @@ fun SettingsScreen(
                 }
             }
 
+            // Qur'an & Reading Typography
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showTypographyDialog = true }
+                        .testTag("settings_typography_card")
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.FormatSize, contentDescription = null, tint = EmeraldPrimary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Reading & Qur'an Typography",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                                Text(
+                                    text = "Arabic: ${arabicFont.displayName} • English: ${englishFont.displayName}",
+                                    style = MaterialTheme.typography.bodySmall.copy(color = EmeraldDark, fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = "Arabic: ${quranFontSize}sp • Meaning: ${translationFontSize}sp",
+                                    style = MaterialTheme.typography.bodySmall.copy(color = TextMuted)
+                                )
+                            }
+                        }
+                        TextButton(onClick = { showTypographyDialog = true }) {
+                            Text("Change")
+                        }
+                    }
+                }
+            }
+
             // Quran Font Size
             item {
                 Card(
@@ -342,12 +400,72 @@ fun SettingsScreen(
                         Slider(
                             value = quranFontSize.toFloat(),
                             onValueChange = { repository.setQuranFontSize(it.toInt()) },
-                            valueRange = 18f..34f,
-                            steps = 7,
+                            valueRange = 18f..38f,
+                            steps = 9,
                             colors = SliderDefaults.colors(
                                 thumbColor = EmeraldPrimary,
                                 activeTrackColor = EmeraldPrimary
                             )
+                        )
+                    }
+                }
+            }
+
+            // App Updates & Distribution Channel Card
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CreamBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToUpdate() }
+                        .testTag("settings_updates_btn")
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(EmeraldPale),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SystemUpdate,
+                                    contentDescription = null,
+                                    tint = EmeraldDark,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "App Updates & Distribution",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = TextDark
+                                    )
+                                )
+                                Text(
+                                    text = "Check version, direct APK updates & Play Store",
+                                    style = MaterialTheme.typography.bodySmall.copy(color = TextMuted)
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = TextMuted
                         )
                     }
                 }
@@ -376,7 +494,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "ZIKR LIFE v1.0 • “Remember Allah. Grow Together.”",
+                            text = "ZIKR LIFE • “Remember Allah. Grow Together.”",
                             style = MaterialTheme.typography.labelSmall.copy(color = TextMuted)
                         )
                     }

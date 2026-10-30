@@ -41,6 +41,7 @@ import com.example.data.repository.AudioPlayerManager
 import com.example.data.repository.AudioPlayerState
 import com.example.data.repository.ZikrPreferencesRepository
 import com.example.ui.components.ArabicTextView
+import com.example.ui.components.TypographySettingsDialog
 import com.example.ui.components.ZikrTopBar
 import com.example.ui.theme.*
 
@@ -55,6 +56,11 @@ fun HisnulMuslimScreen(
     val bookmarkedIds by repository.hisnulBookmarks.collectAsState()
     val favoriteIds by repository.hisnulFavorites.collectAsState()
     val dhikrReadingMode by repository.dhikrReadingMode.collectAsState()
+    val arabicFont by repository.arabicFont.collectAsState()
+    val englishFont by repository.englishFont.collectAsState()
+    val lineSpacing by repository.lineSpacing.collectAsState()
+    val arabicFontSize by repository.arabicFontSize.collectAsState()
+    val translationFontSize by repository.translationFontSize.collectAsState()
     val audioState by audioManager.playerState.collectAsState()
     val currentAudioId by audioManager.currentPlayingId.collectAsState()
     val isRepeat by audioManager.isRepeatEnabled.collectAsState()
@@ -63,6 +69,14 @@ fun HisnulMuslimScreen(
     var selectedCategory by remember { mutableStateOf(HisnulCategory.ALL) }
     var selectedChapterId by remember { mutableStateOf(initialChapterId) }
     var showOnlySaved by remember { mutableStateOf(false) }
+    var showTypographyDialog by remember { mutableStateOf(false) }
+
+    if (showTypographyDialog) {
+        TypographySettingsDialog(
+            repository = repository,
+            onDismiss = { showTypographyDialog = false }
+        )
+    }
 
     BackHandler {
         if (selectedChapterId != null && initialChapterId == null) {
@@ -152,16 +166,29 @@ fun HisnulMuslimScreen(
                         }
                     }
 
-                    // Saved filter toggle
-                    IconButton(
-                        onClick = { showOnlySaved = !showOnlySaved },
-                        modifier = Modifier.testTag("hisnul_saved_filter_btn")
-                    ) {
-                        Icon(
-                            imageVector = if (showOnlySaved) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = "Saved Duas",
-                            tint = if (showOnlySaved) GoldLight else Color.White
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { showTypographyDialog = true },
+                            modifier = Modifier.testTag("hisnul_typography_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FormatSize,
+                                contentDescription = "Typography Settings",
+                                tint = GoldLight
+                            )
+                        }
+
+                        // Saved filter toggle
+                        IconButton(
+                            onClick = { showOnlySaved = !showOnlySaved },
+                            modifier = Modifier.testTag("hisnul_saved_filter_btn")
+                        ) {
+                            Icon(
+                                imageVector = if (showOnlySaved) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = "Saved Duas",
+                                tint = if (showOnlySaved) GoldLight else Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -388,6 +415,11 @@ fun HisnulMuslimScreen(
                         isRepeat = isRepeat,
                         isBookmarked = isBookmarked,
                         isFavorite = isFavorite,
+                        arabicFont = arabicFont,
+                        englishFont = englishFont,
+                        lineSpacing = lineSpacing,
+                        arabicFontSize = arabicFontSize,
+                        translationFontSize = translationFontSize,
                         onPlayAudio = {
                             if (isPlaying) {
                                 audioManager.pause()
@@ -423,6 +455,11 @@ fun HisnulDuaCard(
     isRepeat: Boolean,
     isBookmarked: Boolean,
     isFavorite: Boolean,
+    arabicFont: ArabicFontOption,
+    englishFont: EnglishFontOption,
+    lineSpacing: LineSpacingOption,
+    arabicFontSize: Int,
+    translationFontSize: Int,
     onPlayAudio: () -> Unit,
     onToggleRepeat: () -> Unit,
     onToggleBookmark: () -> Unit,
@@ -522,6 +559,7 @@ fun HisnulDuaCard(
             // Supplication Title
             Text(
                 text = dua.title,
+                fontFamily = englishFont.fontFamily,
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = TextDark
@@ -539,8 +577,10 @@ fun HisnulDuaCard(
             ) {
                 ArabicTextView(
                     arabicText = dua.arabic,
-                    fontSize = 22,
+                    fontSize = arabicFontSize,
                     textColor = EmeraldDark,
+                    fontFamily = arabicFont.fontFamily,
+                    lineHeightMultiplier = lineSpacing.multiplier,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(14.dp)
@@ -552,10 +592,12 @@ fun HisnulDuaCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = dua.transliteration,
+                    fontFamily = englishFont.fontFamily,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = EmeraldMedium,
                         fontStyle = FontStyle.Italic,
-                        lineHeight = 20.sp
+                        fontSize = (translationFontSize - 1).sp,
+                        lineHeight = ((translationFontSize - 1) * lineSpacing.multiplier).sp
                     )
                 )
             }
@@ -565,9 +607,11 @@ fun HisnulDuaCard(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = dua.translation,
+                    fontFamily = englishFont.fontFamily,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = TextDark,
-                        lineHeight = 21.sp
+                        fontSize = translationFontSize.sp,
+                        lineHeight = (translationFontSize * lineSpacing.multiplier).sp
                     )
                 )
             }

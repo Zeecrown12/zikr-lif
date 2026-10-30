@@ -1,0 +1,18 @@
+{
+  "versionCode": 2,
+  "versionName": "1.1.0",
+  "releaseDate": "October 2026",
+  "releaseTitle": "Dual Calendar & Typography Edition",
+  "isMandatory": false,
+  "apkDownloadUrl": "https://github.com/olaademi/zikr-life/releases/latest/download/app-debug.apk",
+  "playStoreUrl": "https://play.google.com/store/apps/details?id=com.aistudio.zikrlife.mxbq",
+  "changelog": [
+    "Complete Dual Islamic & Gregorian monthly calendar grid.",
+    "Support for Nigeria Moon Sighting Committee and Umm al-Qura lunar sighting conventions with -2 to +2 day offset.",
+    "4 Authentic Arabic fonts (Uthmani/Scheherazade New, Amiri Quran, Noto Naskh, Noto Sans).",
+    "4 English translation fonts (Noto Sans, Roboto, Lora, Merriweather) with live reading preview.",
+    "Automatic White Days (Ayyam al-Beed) Sunnah fasting tags on the 13th, 14th, and 15th.",
+    "Private personal date tracking for spiritual milestones and family dates.",
+    "Safe in-app update checks: All bookmarks, tasbih counts, and habits are 100% preserved."
+  ]
+}

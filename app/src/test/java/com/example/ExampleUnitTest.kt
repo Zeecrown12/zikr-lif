@@ -1,6 +1,7 @@
 package com.example
 
 import com.example.data.calendar.IslamicCalendarData
+import com.example.data.calendar.IslamicDate
 import com.example.data.prayer.CalculationMethod
 import com.example.data.prayer.PrayerCalculator
 import org.junit.Assert.*
@@ -42,5 +43,52 @@ class ExampleUnitTest {
     assertTrue("Year should be around 1448 AH", hijriDate.year in 1447..1449)
     assertTrue("Day must be valid", hijriDate.day in 1..30)
     assertTrue("Month must be valid", hijriDate.monthNumber in 1..12)
+  }
+
+  @Test
+  fun testHijriOffsetAndWhiteDays() {
+    val baseDate = LocalDate.of(2026, 10, 24)
+    val standard = IslamicCalendarData.getEstimatedHijriDate(baseDate, offsetDays = 0)
+    val plusOne = IslamicCalendarData.getEstimatedHijriDate(baseDate, offsetDays = 1)
+    val minusOne = IslamicCalendarData.getEstimatedHijriDate(baseDate, offsetDays = -1)
+
+    assertNotNull(standard)
+    assertNotNull(plusOne)
+    assertNotNull(minusOne)
+
+    // White Days check on 13, 14, 15 of any Hijri month
+    val whiteDay13 = IslamicDate(day = 13, monthNumber = 9, year = 1448, monthName = "Ramadan")
+    val whiteDay14 = IslamicDate(day = 14, monthNumber = 9, year = 1448, monthName = "Ramadan")
+    val whiteDay15 = IslamicDate(day = 15, monthNumber = 9, year = 1448, monthName = "Ramadan")
+    val normalDay1 = IslamicDate(day = 1, monthNumber = 9, year = 1448, monthName = "Ramadan")
+
+    assertTrue("Day 13 is a White Day", whiteDay13.isWhiteDay)
+    assertTrue("Day 14 is a White Day", whiteDay14.isWhiteDay)
+    assertTrue("Day 15 is a White Day", whiteDay15.isWhiteDay)
+    assertFalse("Day 1 is not a White Day", normalDay1.isWhiteDay)
+  }
+
+  @Test
+  fun testMajorIslamicEventsContainSacredDays() {
+    val ramadan = IslamicCalendarData.MAJOR_EVENTS.find { it.title.contains("Ramadan", ignoreCase = true) }
+    val arafah = IslamicCalendarData.MAJOR_EVENTS.find { it.title.contains("Arafah", ignoreCase = true) }
+    val eidFitr = IslamicCalendarData.MAJOR_EVENTS.find { it.title.contains("Eid al-Fitr", ignoreCase = true) }
+    val eidAdha = IslamicCalendarData.MAJOR_EVENTS.find { it.title.contains("Eid al-Adha", ignoreCase = true) }
+
+    assertNotNull("Ramadan event must be defined", ramadan)
+    assertNotNull("Day of Arafah must be defined", arafah)
+    assertNotNull("Eid al-Fitr must be defined", eidFitr)
+    assertNotNull("Eid al-Adha must be defined", eidAdha)
+  }
+
+  @Test
+  fun testUpdateManagerVersioning() {
+    val currentCode = com.example.data.update.UpdateManager.getCurrentVersionCode()
+    val currentName = com.example.data.update.UpdateManager.getCurrentVersionName()
+    val appId = com.example.data.update.UpdateManager.getApplicationId()
+
+    assertEquals("Application ID must remain consistent", "com.aistudio.zikrlife.mxbq", appId)
+    assertEquals(2, currentCode)
+    assertEquals("1.1.0", currentName)
   }
 }

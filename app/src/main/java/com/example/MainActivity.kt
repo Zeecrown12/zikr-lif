@@ -44,7 +44,8 @@ enum class SubScreen {
     CALENDAR,
     QIBLA,
     SETTINGS,
-    HISNUL_MUSLIM
+    HISNUL_MUSLIM,
+    APP_UPDATE
 }
 
 class MainActivity : ComponentActivity() {
@@ -162,6 +163,7 @@ fun ZikrLifeApp(
                         onBack = { activeSubScreen = null }
                     )
                     SubScreen.CALENDAR -> CalendarScreen(
+                        repository = repository,
                         onBack = { activeSubScreen = null }
                     )
                     SubScreen.QIBLA -> QiblaScreen(
@@ -170,6 +172,7 @@ fun ZikrLifeApp(
                     )
                     SubScreen.SETTINGS -> SettingsScreen(
                         repository = repository,
+                        onNavigateToUpdate = { activeSubScreen = SubScreen.APP_UPDATE },
                         onBack = { activeSubScreen = null }
                     )
                     SubScreen.HISNUL_MUSLIM -> HisnulMuslimScreen(
@@ -180,6 +183,9 @@ fun ZikrLifeApp(
                             hisnulChapterId = null
                             activeSubScreen = null
                         }
+                    )
+                    SubScreen.APP_UPDATE -> UpdateScreen(
+                        onBack = { activeSubScreen = null }
                     )
                     null -> {}
                 }
@@ -203,6 +209,7 @@ fun ZikrLifeApp(
                             onNavigateToAllahNames = { activeSubScreen = SubScreen.ALLAH_NAMES },
                             onNavigateToQibla = { activeSubScreen = SubScreen.QIBLA },
                             onNavigateToSettings = { activeSubScreen = SubScreen.SETTINGS },
+                            onNavigateToCalendar = { activeSubScreen = SubScreen.CALENDAR },
                             onNavigateToHisnulMuslim = { chapterId ->
                                 hisnulChapterId = chapterId
                                 activeSubScreen = SubScreen.HISNUL_MUSLIM

@@ -169,6 +169,8 @@ fun DigitalTasbihView(
     val audioState by audioManager.playerState.collectAsState()
     val currentAudioId by audioManager.currentPlayingId.collectAsState()
     val isRepeat by audioManager.isRepeatEnabled.collectAsState()
+    val arabicFont by repository.arabicFont.collectAsState()
+    val englishFont by repository.englishFont.collectAsState()
 
     val phrases = DhikrData.TASBIH_PHRASES
     var selectedPhraseIndex by remember { mutableStateOf(0) }
@@ -354,6 +356,7 @@ fun DigitalTasbihView(
                 // Arabic Text
                 Text(
                     text = currentPhraseItem.arabic,
+                    fontFamily = arabicFont.fontFamily,
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = EmeraldDark
@@ -366,6 +369,7 @@ fun DigitalTasbihView(
                 // Transliteration & English Meaning
                 Text(
                     text = "${currentPhraseItem.transliteration} — “${currentPhraseItem.meaning}”",
+                    fontFamily = englishFont.fontFamily,
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = TextMedium,
                         fontWeight = FontWeight.Medium,
@@ -529,6 +533,11 @@ fun AdhkarAudioListView(
     val hapticFeedback = LocalHapticFeedback.current
     val audioState by audioManager.playerState.collectAsState()
     val currentAudioId by audioManager.currentPlayingId.collectAsState()
+    val arabicFont by repository.arabicFont.collectAsState()
+    val englishFont by repository.englishFont.collectAsState()
+    val lineSpacing by repository.lineSpacing.collectAsState()
+    val arabicFontSize by repository.arabicFontSize.collectAsState()
+    val translationFontSize by repository.translationFontSize.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     val countsMap = remember { mutableStateMapOf<String, Int>() }
@@ -704,7 +713,12 @@ fun AdhkarAudioListView(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // Arabic Text (Shown in all modes)
-                    ArabicTextView(text = item.arabic, fontSize = 22.sp)
+                    ArabicTextView(
+                        text = item.arabic,
+                        fontSize = arabicFontSize.sp,
+                        fontFamily = arabicFont.fontFamily,
+                        lineHeightMultiplier = lineSpacing.multiplier
+                    )
 
                     // Transliteration
                     if (readingMode == DhikrReadingMode.FULL || readingMode == DhikrReadingMode.ARABIC_TRANSLITERATION) {
@@ -712,9 +726,12 @@ fun AdhkarAudioListView(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = item.transliteration,
+                                fontFamily = englishFont.fontFamily,
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontStyle = FontStyle.Italic,
-                                    color = TextMedium
+                                    color = TextMedium,
+                                    fontSize = (translationFontSize - 1).sp,
+                                    lineHeight = ((translationFontSize - 1) * lineSpacing.multiplier).sp
                                 )
                             )
                         }
@@ -726,7 +743,12 @@ fun AdhkarAudioListView(
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = item.translation,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = TextDark)
+                                fontFamily = englishFont.fontFamily,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = TextDark,
+                                    fontSize = translationFontSize.sp,
+                                    lineHeight = (translationFontSize * lineSpacing.multiplier).sp
+                                )
                             )
                         }
                     }
@@ -773,6 +795,11 @@ fun DailyDuasListView(
 ) {
     val audioState by audioManager.playerState.collectAsState()
     val currentAudioId by audioManager.currentPlayingId.collectAsState()
+    val arabicFont by repository.arabicFont.collectAsState()
+    val englishFont by repository.englishFont.collectAsState()
+    val lineSpacing by repository.lineSpacing.collectAsState()
+    val arabicFontSize by repository.arabicFontSize.collectAsState()
+    val translationFontSize by repository.translationFontSize.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
@@ -951,16 +978,24 @@ fun DailyDuasListView(
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
-                    ArabicTextView(text = item.arabic, fontSize = 22.sp)
+                    ArabicTextView(
+                        text = item.arabic,
+                        fontSize = arabicFontSize.sp,
+                        fontFamily = arabicFont.fontFamily,
+                        lineHeightMultiplier = lineSpacing.multiplier
+                    )
 
                     if (readingMode == DhikrReadingMode.FULL || readingMode == DhikrReadingMode.ARABIC_TRANSLITERATION) {
                         if (item.transliteration.isNotBlank()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = item.transliteration,
+                                fontFamily = englishFont.fontFamily,
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontStyle = FontStyle.Italic,
-                                    color = TextMedium
+                                    color = TextMedium,
+                                    fontSize = (translationFontSize - 1).sp,
+                                    lineHeight = ((translationFontSize - 1) * lineSpacing.multiplier).sp
                                 )
                             )
                         }
@@ -970,7 +1005,12 @@ fun DailyDuasListView(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = item.translation,
-                            style = MaterialTheme.typography.bodyMedium.copy(color = TextDark)
+                            fontFamily = englishFont.fontFamily,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = TextDark,
+                                fontSize = translationFontSize.sp,
+                                lineHeight = (translationFontSize * lineSpacing.multiplier).sp
+                            )
                         )
                     }
 

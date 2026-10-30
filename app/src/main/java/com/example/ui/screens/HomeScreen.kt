@@ -54,16 +54,18 @@ fun HomeScreen(
     onNavigateToAllahNames: () -> Unit,
     onNavigateToQibla: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToHisnulMuslim: (Int?) -> Unit
+    onNavigateToHisnulMuslim: (Int?) -> Unit,
+    onNavigateToCalendar: () -> Unit = {}
 ) {
     val currentCity by repository.currentCity.collectAsState()
     val calcMethod by repository.calculationMethod.collectAsState()
     val juristicMethod by repository.juristicMethod.collectAsState()
     val todayHabits by repository.todayHabits.collectAsState()
+    val hijriOffset by repository.hijriOffsetDays.collectAsState()
 
     var now by remember { mutableStateOf(LocalTime.now()) }
     val todayDate = remember { LocalDate.now() }
-    val hijriDate = remember(todayDate) { IslamicCalendarData.getEstimatedHijriDate(todayDate) }
+    val hijriDate = remember(todayDate, hijriOffset) { IslamicCalendarData.getEstimatedHijriDate(todayDate, hijriOffset) }
 
     // Live 1-second ticker for countdown
     LaunchedEffect(Unit) {
@@ -182,7 +184,9 @@ fun HomeScreen(
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = Color.White.copy(alpha = 0.12f),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToCalendar() }
                     ) {
                         Row(
                             modifier = Modifier
@@ -448,11 +452,11 @@ fun HomeScreen(
 
             val quickActions = listOf(
                 QuickActionItem("Holy Quran", Icons.Default.MenuBook, EmeraldPrimary) { onNavigateToQuran() },
+                QuickActionItem("Dual Calendar", Icons.Default.CalendarMonth, GoldAccent) { onNavigateToCalendar() },
                 QuickActionItem("Hisnul Muslim", Icons.Default.Shield, EmeraldDark) { onNavigateToHisnulMuslim(null) },
                 QuickActionItem("Digital Tasbih", Icons.Default.TouchApp, GoldAccent) { onNavigateToDhikrTab(0) },
                 QuickActionItem("Morning Adhkar", Icons.Default.WbTwilight, Color(0xFF0284C7)) { onNavigateToDhikrTab(1) },
                 QuickActionItem("Evening Adhkar", Icons.Default.NightsStay, Color(0xFF6366F1)) { onNavigateToDhikrTab(2) },
-                QuickActionItem("Al-Ma'thurat", Icons.Default.Bookmark, EmeraldMedium) { onNavigateToDhikrTab(3) },
                 QuickActionItem("Daily Duas", Icons.Default.VolunteerActivism, Color(0xFFE11D48)) { onNavigateToDhikrTab(4) },
                 QuickActionItem("Ramadan", Icons.Default.Star, GoldAccent) { onNavigateToRamadan() }
             )

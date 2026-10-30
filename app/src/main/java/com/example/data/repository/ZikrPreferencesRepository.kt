@@ -2,10 +2,15 @@ package com.example.data.repository
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.data.calendar.HijriConvention
+import com.example.data.calendar.PersonalCalendarEntry
 import com.example.data.prayer.CalculationMethod
 import com.example.data.prayer.CityLocation
 import com.example.data.prayer.JuristicMethod
 import com.example.data.prayer.PrayerCalculator
+import com.example.ui.theme.ArabicFontOption
+import com.example.ui.theme.EnglishFontOption
+import com.example.ui.theme.LineSpacingOption
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,9 +33,37 @@ class ZikrPreferencesRepository(context: Context) {
     private val _juristicMethod = MutableStateFlow(loadJuristicMethod())
     val juristicMethod: StateFlow<JuristicMethod> = _juristicMethod.asStateFlow()
 
-    // Quran Font Size (sp)
-    private val _quranFontSize = MutableStateFlow(prefs.getInt("quran_font_size", 24))
+    // Quran & Arabic Font Size (sp)
+    private val _quranFontSize = MutableStateFlow(prefs.getInt("quran_font_size", 26))
     val quranFontSize: StateFlow<Int> = _quranFontSize.asStateFlow()
+    val arabicFontSize: StateFlow<Int> = _quranFontSize.asStateFlow()
+
+    // Translation Font Size (sp)
+    private val _translationFontSize = MutableStateFlow(prefs.getInt("translation_font_size", 16))
+    val translationFontSize: StateFlow<Int> = _translationFontSize.asStateFlow()
+
+    fun setArabicFontSize(size: Int) = setQuranFontSize(size)
+
+    // Typography Options
+    private val _arabicFont = MutableStateFlow(loadArabicFont())
+    val arabicFont: StateFlow<ArabicFontOption> = _arabicFont.asStateFlow()
+
+    private val _englishFont = MutableStateFlow(loadEnglishFont())
+    val englishFont: StateFlow<EnglishFontOption> = _englishFont.asStateFlow()
+
+    private val _lineSpacing = MutableStateFlow(loadLineSpacing())
+    val lineSpacing: StateFlow<LineSpacingOption> = _lineSpacing.asStateFlow()
+
+    // Calendar Options
+    private val _hijriOffsetDays = MutableStateFlow(prefs.getInt("hijri_offset_days", 0))
+    val hijriOffsetDays: StateFlow<Int> = _hijriOffsetDays.asStateFlow()
+
+    private val _hijriConvention = MutableStateFlow(loadHijriConvention())
+    val hijriConvention: StateFlow<HijriConvention> = _hijriConvention.asStateFlow()
+
+    // Personal Calendar Tracking Entries
+    private val _calendarEntries = MutableStateFlow(loadCalendarEntries())
+    val calendarEntries: StateFlow<List<PersonalCalendarEntry>> = _calendarEntries.asStateFlow()
 
     // Bookmarked Surahs
     private val _bookmarkedSurahs = MutableStateFlow(loadBookmarks())
@@ -86,6 +119,86 @@ class ZikrPreferencesRepository(context: Context) {
     // Reminder Toggles
     private val _prayerReminders = MutableStateFlow(loadPrayerReminders())
     val prayerReminders: StateFlow<Map<String, Boolean>> = _prayerReminders.asStateFlow()
+
+    // Typography Loaders & Setters
+    private fun loadArabicFont(): ArabicFontOption {
+        val id = prefs.getString("arabic_font_id", ArabicFontOption.UTHMANI.id) ?: ArabicFontOption.UTHMANI.id
+        return ArabicFontOption.fromId(id)
+    }
+
+    fun setArabicFont(option: ArabicFontOption) {
+        prefs.edit().putString("arabic_font_id", option.id).apply()
+        _arabicFont.value = option
+    }
+
+    private fun loadEnglishFont(): EnglishFontOption {
+        val id = prefs.getString("english_font_id", EnglishFontOption.NOTO_SANS.id) ?: EnglishFontOption.NOTO_SANS.id
+        return EnglishFontOption.fromId(id)
+    }
+
+    fun setEnglishFont(option: EnglishFontOption) {
+        prefs.edit().putString("english_font_id", option.id).apply()
+        _englishFont.value = option
+    }
+
+    private fun loadLineSpacing(): LineSpacingOption {
+        val id = prefs.getString("line_spacing_id", LineSpacingOption.NORMAL.id) ?: LineSpacingOption.NORMAL.id
+        return LineSpacingOption.fromId(id)
+    }
+
+    fun setLineSpacing(option: LineSpacingOption) {
+        prefs.edit().putString("line_spacing_id", option.id).apply()
+        _lineSpacing.value = option
+    }
+
+    fun setTranslationFontSize(size: Int) {
+        val safeSize = size.coerceIn(12, 28)
+        prefs.edit().putInt("translation_font_size", safeSize).apply()
+        _translationFontSize.value = safeSize
+    }
+
+    // Calendar Loaders & Setters
+    private fun loadHijriConvention(): HijriConvention {
+        val id = prefs.getString("hijri_convention_id", HijriConvention.UMM_AL_QURA.id) ?: HijriConvention.UMM_AL_QURA.id
+        return HijriConvention.fromId(id)
+    }
+
+    fun setHijriConvention(convention: HijriConvention) {
+        prefs.edit().putString("hijri_convention_id", convention.id).apply()
+        _hijriConvention.value = convention
+    }
+
+    fun setHijriOffsetDays(offset: Int) {
+        val safeOffset = offset.coerceIn(-3, 3)
+        prefs.edit().putInt("hijri_offset_days", safeOffset).apply()
+        _hijriOffsetDays.value = safeOffset
+    }
+
+    private fun loadCalendarEntries(): List<PersonalCalendarEntry> {
+        val json = prefs.getString("personal_calendar_entries", null)
+        return PersonalCalendarEntry.listFromJsonString(json)
+    }
+
+    fun addCalendarEntry(entry: PersonalCalendarEntry) {
+        val current = _calendarEntries.value.toMutableList()
+        current.removeAll { it.id == entry.id }
+        current.add(0, entry)
+        val json = PersonalCalendarEntry.listToJsonString(current)
+        prefs.edit().putString("personal_calendar_entries", json).apply()
+        _calendarEntries.value = current
+    }
+
+    fun updateCalendarEntry(entry: PersonalCalendarEntry) {
+        addCalendarEntry(entry)
+    }
+
+    fun deleteCalendarEntry(id: String) {
+        val current = _calendarEntries.value.toMutableList()
+        current.removeAll { it.id == id }
+        val json = PersonalCalendarEntry.listToJsonString(current)
+        prefs.edit().putString("personal_calendar_entries", json).apply()
+        _calendarEntries.value = current
+    }
 
     private fun loadQuranReadingMode(): com.example.data.quran.QuranReadingMode {
         val name = prefs.getString("quran_reading_mode", com.example.data.quran.QuranReadingMode.FULL.name)
@@ -164,7 +277,7 @@ class ZikrPreferencesRepository(context: Context) {
     }
 
     fun setQuranFontSize(size: Int) {
-        val safeSize = size.coerceIn(16, 36)
+        val safeSize = size.coerceIn(18, 38)
         prefs.edit().putInt("quran_font_size", safeSize).apply()
         _quranFontSize.value = safeSize
     }
@@ -264,7 +377,6 @@ class ZikrPreferencesRepository(context: Context) {
         return if (savedDate == today) {
             prefs.getStringSet("habits_completed", emptySet()) ?: emptySet()
         } else {
-            // New day, reset daily checklist
             emptySet()
         }
     }
